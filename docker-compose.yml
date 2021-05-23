@@ -18,3 +18,4 @@ services:
             - TWITTER_ACCESS_TOKEN_SECRET
             - USE_PROXY_SERVER
             - PROXY_SERVER_IP
+            - PROXY_SERVER_PORT

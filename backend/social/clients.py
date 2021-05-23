@@ -3,6 +3,7 @@ from abc import abstractmethod
 from typing import List
 from urllib.parse import urlencode, urljoin
 
+import httplib2
 import oauth2
 import requests
 from core import settings
@@ -51,12 +52,32 @@ class TwitterClient(Client):
         self.access_token = settings.TWITTER_ACCESS_TOKEN
         self.access_token_secret = settings.TWITTER_ACCESS_TOKEN_SECRET
 
+        use_proxy_server = getattr(settings, 'USE_PROXY_SERVER', False)
+        proxy_server_ip = getattr(settings, 'PROXY_SERVER_IP', '')
+        proxy_server_port = getattr(settings, 'PROXY_SERVER_PORT', '')
+
+        if use_proxy_server:
+            self.proxy_server_ip = proxy_server_ip
+            self.proxy_server_port = proxy_server_port
+        else:
+            self.proxy_server_ip = None
+            self.proxy_server_port = None
+
     def _get_oauth_client(self) -> oauth2.Client:
         consumer = oauth2.Consumer(key=self.consumer_key,
                                    secret=self.consumer_secret)
         access_token = oauth2.Token(key=self.access_token,
                                     secret=self.access_token_secret)
-        return oauth2.Client(consumer, access_token)
+        if self.proxy_server_ip:
+            proxy_info = httplib2.ProxyInfo(
+                httplib2.socks.PROXY_TYPE_HTTP_NO_TUNNEL,
+                self.proxy_server_ip,
+                int(self.proxy_server_port)
+            )
+        else:
+            proxy_info = None
+
+        return oauth2.Client(consumer, access_token, proxy_info=proxy_info)
 
     def get_user(self, user_id: str) -> User:
 
@@ -219,6 +240,18 @@ class VKClient(Client):
     def __init__(self):
         self.access_token = getattr(settings, 'VK_ACCESS_TOKEN', None)
 
+        use_proxy_server = getattr(settings, 'USE_PROXY_SERVER', False)
+        proxy_server_ip = getattr(settings, 'PROXY_SERVER_IP', '')
+        proxy_server_port = getattr(settings, 'PROXY_SERVER_PORT', '')
+
+        if use_proxy_server:
+            self.proxies = {
+                'http': '{}:{}'.format(proxy_server_ip, proxy_server_port),
+                'https': '{}:{}'.format(proxy_server_ip, proxy_server_port),
+            }
+        else:
+            self.proxies = None
+
     def get_user(self, user_id: str) -> User:
         params = {
             'user_ids': user_id,
@@ -228,7 +261,9 @@ class VKClient(Client):
         }
 
         try:
-            response = requests.get(self.user_api_url, params)
+            response = requests.get(
+                self.user_api_url, params, proxies=self.proxies
+            )
         except (requests.exceptions.HTTPError,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.Timeout,
@@ -271,7 +306,9 @@ class VKClient(Client):
         }
 
         try:
-            response = requests.get(self.wall_api_url, params)
+            response = requests.get(
+                self.wall_api_url, params, proxies=self.proxies
+            )
         except (requests.exceptions.HTTPError,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.Timeout,
@@ -312,7 +349,9 @@ class VKClient(Client):
         }
 
         try:
-            response = requests.get(self.friends_api_url, params)
+            response = requests.get(
+                self.friends_api_url, params, proxies=self.proxies
+            )
         except (requests.exceptions.HTTPError,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.Timeout,
@@ -353,7 +392,9 @@ class VKClient(Client):
         }
 
         try:
-            response = requests.get(self.followers_api_url, params)
+            response = requests.get(
+                self.followers_api_url, params, proxies=self.proxies
+            )
         except (requests.exceptions.HTTPError,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.Timeout,
