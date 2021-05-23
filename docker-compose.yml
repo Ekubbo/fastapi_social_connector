@@ -1,0 +1,20 @@
+version: '3.7'
+
+services:
+    backend:
+        container_name: social_connector_backend
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        command: uvicorn main:app --reload --port 5000 --host 0.0.0.0
+        ports:
+            - 8000:5000
+        restart: always
+        environment:
+            - VK_ACCESS_TOKEN
+            - TWITTER_API_KEY
+            - TWITTER_API_SECRET_KEY
+            - TWITTER_ACCESS_TOKEN
+            - TWITTER_ACCESS_TOKEN_SECRET
+            - USE_PROXY_SERVER
+            - PROXY_SERVER_IP
