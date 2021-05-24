@@ -39,7 +39,7 @@ class TwitterArticle(Article):
 
 
 class VKArticle(Article):
-    likes_count: int = Field(alias='likes__count', default=0)
+    likes_count: int = Field(alias='likes.count', default=0)
     comments_count: int = Field(alias='comments.count', default=0)
     reposts_count: int = Field(alias='reposts.count', default=0)
     retweet_count: int = 0
